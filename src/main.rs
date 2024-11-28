@@ -1,5 +1,7 @@
+use std::error::Error;
 use clap::Parser;
-use tracing::info;
+use tracing::{error, info};
+use crate::convert::convert;
 
 mod cli;
 mod convert;
@@ -10,10 +12,16 @@ fn main() {
 
     let args = cli::Cli::parse();
 
-    info!("{:?}", args);
-
     match args.command {
         cli::Command::Convert(conv) => {
+            match convert(&conv) {
+                Ok(()) => {
+                    info!("Converted successfully!");
+                }
+                Err(err) => {
+                    error!("{}", err);
+                }
+            };
         },
         cli::Command::Head {  } => todo!(),
         cli::Command::Join { input } => todo!(),
