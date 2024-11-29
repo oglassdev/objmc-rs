@@ -27,18 +27,20 @@ pub enum Command {
 #[derive(Args, Debug, Clone)]
 #[command()]
 pub struct Convert {
-    /// The input model obj
-    pub obj: String,
-
-    /// The input model texture
-    pub texture: String,
-
     /// The output model JSON
     pub output_model: String,
 
     /// The output model texture
     pub output_texture: String,
 
+    /// The input model obj
+    #[arg(short, long, required = true)]
+    pub obj: Vec<String>,
+
+    /// The input model texture
+    #[arg(short, long, required = true)]
+    pub texture: Vec<String>,
+    
     /// Model offset
     #[arg(long, num_args = 3)]
     pub offset: Vec<f64>,
