@@ -1,9 +1,9 @@
-use image::{GenericImage, Rgba, RgbaImage};
+use image::{Rgba, RgbaImage};
 use crate::convert::texture::property::TextureProperty;
-use crate::obj::Normal;
+use crate::obj::model::Vector;
 
 pub struct UVData<'a> {
-    pub uvs: &'a Vec<Normal>,
+    pub uvs: &'a Vec<Vector<f32>>,
     pub width: u32
 }
 
@@ -31,7 +31,7 @@ impl TextureProperty for UVData<'_> {
     }
 }
 
-fn normal_to_gb(normal: &Normal) -> [Rgba<u8>; 2] {
+fn normal_to_gb(normal: &Vector<f32>) -> [Rgba<u8>; 2] {
     // TODO: Scale & offset
     //  ex: let x = 8388608 + (vertex.x * 65536) * scale + offset[0] * 65536
     let x = (normal.x * 65536.0).floor() as u32;

@@ -1,4 +1,4 @@
-use image::{GenericImage, Rgba, RgbaImage};
+use image::{Rgba, RgbaImage};
 use crate::convert::texture::property::TextureProperty;
 
 pub struct SettingsProperty {

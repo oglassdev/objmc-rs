@@ -1,6 +1,6 @@
-use image::{GenericImage, Rgba, RgbaImage};
+use image::{Rgba, RgbaImage};
 use crate::convert::texture::property::TextureProperty;
-use crate::obj::Face;
+use crate::obj::model::Face;
 
 pub struct VertexIndexes<'a> {
     pub faces: &'a Vec<Face>,
@@ -13,7 +13,7 @@ impl TextureProperty for VertexIndexes<'_> {
     }
 
     fn draw(&self, image: &mut RgbaImage, offset: u32) {
-        let width = self.width();
+        let width = self.width;
 
         let mut idx = 0;
 

@@ -1,33 +1,21 @@
+pub mod model;
+mod frame;
+
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::io::BufRead;
+use tracing::warn;
+use model::{Position, Vector, Face};
+use frame::Frame;
 
-#[derive(Debug)]
-pub struct Obj {
-    pub vertices: Vec<Vertex>,
-    pub uvs: Vec<Normal>,
-    pub faces: Vec<Face>
+#[derive(Debug, Clone)]
+pub struct FramedObj {
+    pub vertices: Vec<Position<f64>>,
+    pub uvs: Vec<Vector<f32>>,
+    pub frames: Vec<Frame>
 }
 
-#[derive(Debug)]
-pub struct Face {
-    pub vertex_normals: Vec<(u32, u32)>,
-}
-
-#[derive(Debug, PartialOrd, PartialEq, Clone, Copy)]
-pub struct Vertex {
-    pub x: f64,
-    pub y: f64,
-    pub z: f64
-}
-
-#[derive(Debug, PartialOrd, PartialEq, Clone, Copy)]
-pub struct Normal {
-    pub x: f32,
-    pub y: f32
-}
-
-impl Hash for Vertex {
+impl Hash for Position<f64> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let x_bits = self.x.to_bits();
         let y_bits = self.y.to_bits();
@@ -42,7 +30,7 @@ impl Hash for Vertex {
     }
 }
 
-impl Hash for Normal {
+impl Hash for Vector<f32> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         let x_bits = self.x.to_bits();
         let y_bits = self.y.to_bits();
@@ -55,122 +43,109 @@ impl Hash for Normal {
     }
 }
 
-impl Eq for Vertex {}
+impl Eq for Position<f64> {}
 
-impl Eq for Normal {}
+impl Eq for Vector<f32> {}
 
-impl Obj {
-    pub fn read<T: BufRead>(reader: T) -> Obj {
-        let mut vertices: Vec<Vertex> = Vec::new();
-        let mut uvs: Vec<Normal> = Vec::new();
-        let mut faces: Vec<Face> = Vec::new();
+impl FramedObj {
+    pub fn read<T: BufRead>(sources: Vec<T>) -> Self {
+        let mut vertices: Vec<Position<f64>> = Vec::new();
+        let mut uvs: Vec<Vector<f32>> = Vec::new();
+        let mut frames: Vec<Frame> = Vec::new();
 
-        for line in reader.lines() {
-            let line = match line {
-                Ok(l) => l,
-                Err(_) => continue
-            };
+        let mut vertex_map: HashMap<Position<f64>, usize> = HashMap::new();
+        let mut uv_map: HashMap<Vector<f32>, usize> = HashMap::new();
 
-            let mut parts = line.split_whitespace();
+        for source in sources {
+            let mut local_vertices: Vec<usize> = Vec::new();
+            let mut local_uvs: Vec<usize> = Vec::new();
+            let mut faces: Vec<Face> = Vec::new();
 
-            if let Some(prefix) = parts.next() {
-                match prefix {
-                    "v" => {
-                        // Parse positions
-                        let coords: Vec<f64> = parts
-                            .filter_map(|p| p.parse::<f64>().ok())
-                            .collect();
-                        if coords.len() == 3 {
-                            vertices.push(
-                                Vertex {
-                                    x: coords[0],
-                                    y: coords[1],
-                                    z: coords[2]
-                                }
-                            );
-                        }
-                    }
-                    "vt" => {
-                        // Parse texture coordinates
-                        let coords: Vec<f32> = parts
-                            .filter_map(|p| p.parse::<f32>().ok())
-                            .collect();
-                        if coords.len() >= 2 {
-                            uvs.push(
-                                Normal {
-                                    x: coords[0],
-                                    y: coords[1]
-                                }
-                            );
-                        }
-                    }
-                    "f" => {
-                        let mut vertex_normals: Vec<(u32, u32)> = Vec::new();
-                        for face in parts {
-                            let indices: Vec<u32> = face
-                                .split('/')
-                                .map(|value| value.parse::<u32>().expect("Index doesn't conform to u32"))
+            // Parse each line, deduping as we go
+            for line in source.lines() {
+                let line = match line {
+                    Ok(l) => l,
+                    Err(_) => continue
+                };
+
+                let mut parts = line.split_whitespace();
+
+                if let Some(prefix) = parts.next() {
+                    match prefix {
+                        "v" => {
+                            // Parse positions
+                            let coords: Vec<f64> = parts
+                                .filter_map(|p| p.parse::<f64>().ok())
                                 .collect();
 
-                            vertex_normals.push(
-                                (indices[0] - 1, indices.get(1).copied().unwrap_or(1) - 1)
+                            if coords.len() != 3 {
+                                warn!("Vertex didn't have the appropriate values; Expect errors");
+                                continue
+                            }
+
+                            let vertex = Position::new(coords[0], coords[1], coords[2]);
+
+                            // Dedup positions
+                            local_vertices.push(
+                                *vertex_map.entry(vertex)
+                                    .or_insert_with(|| {
+                                        vertices.push(vertex);
+                                        vertices.len() - 1
+                                    })
                             );
                         }
-                        faces.push(Face { vertex_normals });
+                        "vt" => {
+                            // Parse UVs
+                            let coords: Vec<f32> = parts
+                                .filter_map(|p| p.parse::<f32>().ok())
+                                .collect();
+
+                            if coords.len() != 3 {
+                                warn!("UV didn't have the appropriate values; Expect errors");
+                                continue
+                            }
+
+                            let uv = Vector::new(coords[0], coords[1]);
+
+                            // Dedup UVs
+                            local_uvs.push(
+                                *uv_map.entry(uv)
+                                    .or_insert_with(|| {
+                                        uvs.push(uv);
+                                        uvs.len() - 1
+                                    })
+                            );
+                        }
+                        "f" => {
+                            // We ignore the third value, as we just use v & vt
+                            let mut vertex_normals: Vec<(u32, u32)> = Vec::new();
+
+                            for element in parts {
+                                let indices: Vec<usize> = element
+                                    .split('/')
+                                    .map(|value| value.parse::<usize>().expect("Index doesn't conform to usize"))
+                                    .collect();
+
+                                // Use the deduped addresses
+                                vertex_normals.push((
+                                    local_vertices[indices[0] - 1] as u32,
+                                    local_uvs[indices.get(1).copied().unwrap_or(1) - 1] as u32
+                                ));
+                            }
+                            faces.push(Face { vertex_normals });
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
             }
-        }
 
-        Obj {
+            frames.push(Frame { faces })
+        }
+        
+        Self {
             vertices,
             uvs,
-            faces,
-        }
-    }
-
-    pub fn dedup(mut self) -> Obj {
-        let mut unique_vertices: Vec<Vertex> = Vec::new();
-        let mut unique_uvs: Vec<Normal> = Vec::new();
-
-        let mut vertex_map: HashMap<Vertex, usize> = HashMap::new();
-        let mut uv_map: HashMap<Normal, usize> = HashMap::new();
-
-        for vertex in self.vertices.clone() {
-            vertex_map.entry(vertex)
-                .or_insert_with(|| {
-                    unique_vertices.push(vertex);
-                    unique_vertices.len() - 1
-                });
-        }
-
-        for uv in self.uvs.clone() {
-            uv_map.entry(uv)
-                .or_insert_with(|| {
-                    unique_uvs.push(uv);
-                    unique_uvs.len() - 1
-                });
-        }
-
-        let mut new_faces: Vec<Face> = Vec::new();
-
-        for face in self.faces {
-            let new_vertex_normals: Vec<(u32, u32)> = face.vertex_normals.into_iter()
-                .map(|(vertex_idx, uv_idx)| {
-                    let new_vertex_idx = vertex_map[&self.vertices[vertex_idx as usize]] as u32;
-                    let new_uv_idx = uv_map[&self.uvs[uv_idx as usize]] as u32;
-                    (new_vertex_idx, new_uv_idx)
-                })
-                .collect();
-
-            new_faces.push(Face { vertex_normals: new_vertex_normals });
-        }
-
-        Obj {
-            vertices: unique_vertices,
-            uvs: unique_uvs,
-            faces: new_faces,
+            frames,
         }
     }
 }
