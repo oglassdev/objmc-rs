@@ -1,10 +1,10 @@
 pub mod model;
-mod frame;
+pub mod frame;
 
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::io::BufRead;
-use tracing::warn;
+use tracing::{info, warn};
 use model::{Position, Vector, Face};
 use frame::Frame;
 
@@ -100,7 +100,7 @@ impl FramedObj {
                                 .filter_map(|p| p.parse::<f32>().ok())
                                 .collect();
 
-                            if coords.len() != 3 {
+                            if coords.len() < 2 {
                                 warn!("UV didn't have the appropriate values; Expect errors");
                                 continue
                             }
@@ -141,7 +141,9 @@ impl FramedObj {
 
             frames.push(Frame { faces })
         }
-        
+
+        info!("Read {:?} frame(s) totaling {:?} vertices, and {:?} uvs", frames.len(), vertices.len(), uv_map.len());
+
         Self {
             vertices,
             uvs,

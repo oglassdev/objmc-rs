@@ -1,11 +1,10 @@
-use std::error::Error;
 use clap::Parser;
 use tracing::{error, info};
 use crate::convert::convert;
 
 mod cli;
 mod convert;
-pub mod obj;
+pub(crate) mod obj;
 
 fn main() {
     tracing_subscriber::fmt::init();
