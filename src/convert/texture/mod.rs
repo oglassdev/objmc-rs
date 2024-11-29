@@ -79,14 +79,16 @@ pub fn create_texture(state: &ConvertState) -> RgbaImage {
         width
     };
 
+    let base_height = settings_property.height() +
+        face_id_property.height() +
+        texture_properties.len() as u32 * height +
+        position_data_property.height() +
+        uv_data_property.height() +
+        vertex_indexes_property.height();
+
     let mut buf = RgbaImage::new(
         width,
-        settings_property.height() +
-            face_id_property.height() +
-            texture_properties.len() as u32 * height +
-            position_data_property.height() +
-            uv_data_property.height() +
-            vertex_indexes_property.height()
+        if state.args.no_pow { base_height } else { base_height.next_power_of_two() }
     );
 
     let mut offset: u32 = 0;
