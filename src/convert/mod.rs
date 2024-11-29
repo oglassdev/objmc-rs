@@ -1,75 +1,57 @@
 mod texture;
+mod model;
+mod state;
 
-use image::{ImageReader, Rgba, RgbaImage};
+use image::{ImageReader, RgbaImage};
 
 use crate::cli::Convert;
 use std::{fs::File, io::BufWriter};
 use std::error::Error;
 use std::io::BufReader;
-use serde_json::json;
 use tracing::info;
-use crate::convert::texture::settings::SettingsHeader;
-use crate::obj::Obj;
+use crate::convert::state::ConvertState;
+use crate::convert::texture::create_texture;
+use crate::obj::FramedObj;
 
 pub fn convert(convert: &Convert) -> Result<(), Box<dyn Error>> {
-    let obj_file = File::open(&convert.obj)?;
+    info!("Starting conversion...");
 
-    let buf_reader = BufReader::new(obj_file);
+    let mut objs: Vec<BufReader<File>> = Vec::new();
 
-    let image_reader = ImageReader::open(&convert.texture)?;
+    for path in convert.obj.iter() {
+        objs.push(BufReader::new(File::open(path)?));
+    }
 
-    let image = image_reader.decode()?;
+    let framed_obj = FramedObj::read(objs);
 
-    let obj = Obj::read(buf_reader).dedup();
+    let mut textures: Vec<RgbaImage> = Vec::new();
 
-    info!("Read OBJ: {:?} faces, {:?} verticies, {:?} normals", obj.faces.len(), obj.vertices.len(), obj.uvs.len());
-
-    let mut buf = RgbaImage::new(image.width(), image.height());
-
-    let settings_header = SettingsHeader::from_config(
-        convert,
-        &obj,
-        [image.width() as u16, image.height() as u16]
-    )?;
-
-    settings_header.draw(&mut buf);
-
-    texture::face_id_header::create_face_uv_id_header(&mut buf, obj.faces.len() as u32);
-
+    for path in convert.texture.iter() {
+        let image = ImageReader::open(path)?.decode()?.to_rgba8();
+        if !textures.is_empty() && image.dimensions() != textures[0].dimensions() {
+            return Err("Textures were of different size".into())
+        }
+        textures.push(image);
+    }
+    
+    if textures.is_empty() {
+        return Err("Please provide a texture".into())
+    }
+    
+    let state = ConvertState {
+        args: convert,
+        compress: framed_obj.uvs.len() <= 256 && convert.compress,
+        texture_size: textures[0].dimensions(),
+        framed_obj,
+        textures
+    };
+    
     // TODO: replace with actual output
     let new_file = File::create("test/output.png")?;
 
     let mut writer = BufWriter::new(new_file);
 
-    buf.write_to(&mut writer, image::ImageFormat::Png)?;
-
-    info!("Reading input...");
-
-    /*
-    for input in &convert.input {
-        let obj_path = input.get(0).unwrap();
-        let tex_path = input.get(1).unwrap();
-
-        let obj_file = File::open(obj_path)?;
-        let tex_file = File::open(tex_path).ok();
-
-        let buf_reader = BufReader::new(obj_file);
-
-        let obj = obj::read(buf_reader);
-
-        for [x, y, z] in &obj.positions {
-
-            elements.push(element);
-        }
-    }
-
-     */
-
-    // Write JSON
+    create_texture(&state).write_to(&mut writer, image::ImageFormat::Png)?;
 
     Ok(())
-}
-
-fn get_header(out: &str, index: usize, x: usize, y: usize, ty: usize) -> String {
-    "hello".to_string()
 }
