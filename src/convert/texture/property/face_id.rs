@@ -8,8 +8,7 @@ pub struct FaceIdProperty {
 
 impl TextureProperty for FaceIdProperty {
     fn height(&self) -> u32 {
-        let result = self.length / self.width;
-        if self.length % self.width == 0 { result } else { result + 1 }
+        (self.length as f64 / self.width as f64).ceil() as u32
     }
 
     fn draw(&self, buf: &mut RgbaImage, offset: u32) {

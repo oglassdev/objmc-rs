@@ -3,8 +3,8 @@ use crate::convert::texture::property::TextureProperty;
 use crate::obj::model::Position;
 
 pub struct PositionData<'a> {
-    vertices: &'a Vec<Position<f64>>,
-    width: u32
+    pub vertices: &'a Vec<Position<f64>>,
+    pub width: u32
 }
 
 impl TextureProperty for PositionData<'_> {
