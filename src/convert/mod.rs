@@ -9,6 +9,7 @@ use std::{fs::File, io::BufWriter};
 use std::error::Error;
 use std::io::BufReader;
 use tracing::info;
+use crate::convert::model::create_model_output;
 use crate::convert::state::ConvertState;
 use crate::convert::texture::create_texture;
 use crate::obj::FramedObj;
@@ -33,11 +34,11 @@ pub fn convert(convert: &Convert) -> Result<(), Box<dyn Error>> {
         }
         textures.push(image);
     }
-    
+
     if textures.is_empty() {
         return Err("Please provide a texture".into())
     }
-    
+
     let state = ConvertState {
         args: convert,
         compress: framed_obj.uvs.len() <= 256 && convert.compress,
@@ -45,13 +46,21 @@ pub fn convert(convert: &Convert) -> Result<(), Box<dyn Error>> {
         framed_obj,
         textures
     };
-    
+
     // TODO: replace with actual output
     let new_file = File::create("test/output.png")?;
 
     let mut writer = BufWriter::new(new_file);
 
-    create_texture(&state).write_to(&mut writer, image::ImageFormat::Png)?;
-
+    let tex = create_texture(&state);
+    
+    tex.write_to(&mut writer, image::ImageFormat::Png)?;
+    
+    let new_file = File::create("test/output.json")?;
+    
+    let writer = BufWriter::new(new_file);
+    
+    serde_json::to_writer(writer, &create_model_output(&state, "block/output", tex.height()))?;
+    
     Ok(())
 }
