@@ -47,20 +47,21 @@ pub fn convert(convert: &Convert) -> Result<(), Box<dyn Error>> {
         textures
     };
 
-    // TODO: replace with actual output
-    let new_file = File::create("test/output.png")?;
+    let new_file = File::create(&state.args.output_texture)?;
 
     let mut writer = BufWriter::new(new_file);
 
     let tex = create_texture(&state);
-    
+
     tex.write_to(&mut writer, image::ImageFormat::Png)?;
-    
-    let new_file = File::create("test/output.json")?;
-    
+
+    let new_file = File::create(&state.args.output_model)?;
+
     let writer = BufWriter::new(new_file);
-    
-    serde_json::to_writer(writer, &create_model_output(&state, "block/output", tex.height()))?;
-    
+
+    let resource = state.args.texture_resource.as_ref().unwrap_or(&state.args.output_texture);
+
+    serde_json::to_writer(writer, &create_model_output(&state, resource, tex.height()))?;
+
     Ok(())
 }

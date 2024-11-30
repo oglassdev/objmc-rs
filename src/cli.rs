@@ -33,6 +33,10 @@ pub struct Convert {
     /// The output model texture
     pub output_texture: String,
 
+    /// The resource to point to in the model JSON. The output texture will be used if not specified
+    #[arg(long)]
+    pub texture_resource: Option<String>,
+
     /// The input model obj
     #[arg(short, long, required = true)]
     pub obj: Vec<String>,
