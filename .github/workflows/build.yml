@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build
+      run: cargo build --release --verbose
+
+    - name: Archive Build Output
+      run: |
+        mkdir build-output
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          cp target/release/objmc.exe build-output/
+        else
+          cp target/release/objmc build-output/
+        fi
+      shell: bash
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-build-output
+        path: build-output/
