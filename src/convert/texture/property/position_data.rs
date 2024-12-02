@@ -4,7 +4,9 @@ use crate::obj::model::Position;
 
 pub struct PositionData<'a> {
     pub vertices: &'a Vec<Position<f64>>,
-    pub width: u32
+    pub width: u32,
+    pub scale: f64,
+    pub offset: Position<f64>
 }
 
 impl TextureProperty for PositionData<'_> {
@@ -18,7 +20,7 @@ impl TextureProperty for PositionData<'_> {
         for (idx, vertex) in self.vertices.iter().enumerate() {
             let idx = idx as u32 * 3;
 
-            let [x, y, z] = pos_to_rgb(vertex);
+            let [x, y, z] = pos_to_rgb(vertex, self.scale, self.offset);
 
             let pos_x = idx % width;
             let pos_y = idx / width + offset;
@@ -35,12 +37,12 @@ impl TextureProperty for PositionData<'_> {
     }
 }
 
-fn pos_to_rgb(vertex: &Position<f64>) -> [Rgba<u8>; 3] {
+fn pos_to_rgb(vertex: &Position<f64>, scale: f64, offset: Position<f64>) -> [Rgba<u8>; 3] {
     // TODO: Scale & offset
     //  ex: let x = (8388608.0 + vertex.x * 65536.0 * scale + offset.x * 65536.0).floor() as u32
-    let x = (8388608.0 + vertex.x * 65536.0).floor() as u32;
-    let y = (8388608.0 + vertex.y * 65536.0).floor() as u32;
-    let z = (8388608.0 + vertex.z * 65536.0).floor() as u32;
+    let x = (8388608.0 + (vertex.x + offset.x) * 65536.0 * scale).floor() as u32;
+    let y = (8388608.0 + (vertex.y + offset.y) * 65536.0 * scale).floor() as u32;
+    let z = (8388608.0 + (vertex.z + offset.z) * 65536.0 * scale).floor() as u32;
 
     [
         Rgba([

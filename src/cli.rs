@@ -46,12 +46,12 @@ pub struct Convert {
     pub texture: Vec<String>,
     
     /// Model offset
-    #[arg(long, num_args = 3)]
+    #[arg(long, num_args = 3, default_values_t = [0.0, 0.0, 0.0])]
     pub offset: Vec<f64>,
 
     /// Model scale
-    #[arg(long, num_args = 3)]
-    pub scale: Vec<f64>,
+    #[arg(long, default_value_t = 1.0)]
+    pub scale: f64,
 
     /// The duration of the animation
     #[arg(long, default_value_t = 0)]

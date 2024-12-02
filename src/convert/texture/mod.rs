@@ -2,6 +2,7 @@ use image::RgbaImage;
 use crate::cli::{Easing, Visibility};
 use crate::convert::state::ConvertState;
 use crate::convert::texture::property::{FaceIdProperty, PositionData, SettingsProperty, Texture, TextureProperty, UVData, VertexIndexes};
+use crate::obj::model::Position;
 
 mod property;
 
@@ -66,7 +67,9 @@ pub fn create_texture(state: &ConvertState) -> RgbaImage {
 
     let position_data_property = PositionData {
         vertices: &state.framed_obj.vertices,
-        width
+        width,
+        scale: state.args.scale,
+        offset: Position::new(state.args.offset[0], state.args.offset[1], state.args.offset[2])
     };
 
     let uv_data_property = UVData {

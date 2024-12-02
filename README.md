@@ -18,7 +18,7 @@ objmc-rs is relatively new and isn't as fully featured as the original Python ve
   - [x] Settings header
   - [x] Texture inversion
   - [x] Position/UV data generation
-  - [ ] Offset & scale
+  - [x] Offset & scale
   - [ ] Compression
 
 ---
