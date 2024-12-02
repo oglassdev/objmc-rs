@@ -23,7 +23,7 @@ pub fn convert(convert: &Convert) -> Result<(), Box<dyn Error>> {
         objs.push(BufReader::new(File::open(path)?));
     }
 
-    let framed_obj = FramedObj::read(objs);
+    let framed_obj = FramedObj::read(objs)?;
 
     let mut textures: Vec<RgbaImage> = Vec::new();
 

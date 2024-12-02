@@ -48,7 +48,7 @@ impl Eq for Position<f64> {}
 impl Eq for Vector<f32> {}
 
 impl FramedObj {
-    pub fn read<T: BufRead>(sources: Vec<T>) -> Self {
+    pub fn read<T: BufRead>(sources: Vec<T>) -> Result<Self, Box<dyn std::error::Error>> {
         let mut vertices: Vec<Position<f64>> = Vec::new();
         let mut uvs: Vec<Vector<f32>> = Vec::new();
         let mut frames: Vec<Frame> = Vec::new();
@@ -118,36 +118,47 @@ impl FramedObj {
                         }
                         "f" => {
                             // We ignore the third value, as we just use v & vt
-                            let mut vertex_normals: Vec<(u32, u32)> = Vec::new();
+                            let mut indices: Vec<(u32, u32)> = Vec::new();
 
                             for element in parts {
-                                let indices: Vec<usize> = element
+                                let vertex_uv: Vec<usize> = element
                                     .split('/')
                                     .map(|value| value.parse::<usize>().expect("Index doesn't conform to usize"))
                                     .collect();
 
                                 // Use the deduped addresses
-                                vertex_normals.push((
-                                    local_vertices[indices[0] - 1] as u32,
-                                    local_uvs[indices.get(1).copied().unwrap_or(1) - 1] as u32
+                                indices.push((
+                                    local_vertices[vertex_uv[0] - 1] as u32,
+                                    local_uvs[vertex_uv.get(1).copied().unwrap_or(1) - 1] as u32
                                 ));
                             }
-                            faces.push(Face { vertex_normals });
+
+                            if indices.len() == 3 {
+                                indices.push(indices[1].clone());
+                            }
+
+                            faces.push(Face { vertex_normals: indices });
                         }
                         _ => {}
                     }
                 }
             }
 
+            if faces.len() != frames.first().map_or(faces.len(), |frame| frame.faces.len()) {
+                return Err("A frame didn't have the same amount of faces as starting frame".into())
+            }
+
             frames.push(Frame { faces })
         }
 
-        info!("Read {:?} frame(s) totaling {:?} vertices, and {:?} uvs", frames.len(), vertices.len(), uv_map.len());
+        info!("Read {:?} frame(s) totaling {:?} vertices and {:?} uvs", frames.len(), vertices.len(), uv_map.len());
 
-        Self {
-            vertices,
-            uvs,
-            frames,
-        }
+        Ok(
+            Self {
+                vertices,
+                uvs,
+                frames,
+            }
+        )
     }
 }
