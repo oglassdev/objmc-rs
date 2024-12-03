@@ -11,7 +11,7 @@ objmc-rs is relatively new and isn't as fully featured as the original Python ve
 
 - [ ] Commands
   - [x] `convert` - takes an input model and texture and produces an output
-  - [ ] `join` - join multiple models together
+  - [x] `join` - join multiple models together
   - [ ] `head` - creates a skull texture
 - [ ] Generation
   - [x] Multiple models/textures

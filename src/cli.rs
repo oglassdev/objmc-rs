@@ -19,8 +19,8 @@ pub enum Command {
     Head {},
     #[command(about = "Join multiple models together")]
     Join {
-        #[arg(short, long)]
-        input: Vec<String>
+        output: String,
+        models: Vec<String>
     },
 }
 
