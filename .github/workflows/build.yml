@@ -11,29 +11,47 @@ env:
 
 jobs:
   build:
+    name: ${{ matrix.platform.os-name }} with rust ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.platform.runs-on }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-
+        platform:
+          - os-name: FreeBSD-x86_64
+            runs-on: ubuntu-20.04
+            target: x86_64-unknown-freebsd
+            skip_tests: true
+          - os-name: Linux-x86_64
+            runs-on: ubuntu-20.04
+            target: x86_64-unknown-linux-musl
+          - os-name: Linux-aarch64
+            runs-on: ubuntu-20.04
+            target: aarch64-unknown-linux-musl
+          - os-name: Linux-arm
+            runs-on: ubuntu-20.04
+            target: arm-unknown-linux-musleabi
+          - os-name: Windows-x86_64
+            runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os-name: macOS-x86_64
+            runs-on: macOS-latest
+            target: x86_64-apple-darwin
+          - os-name: macOS-aarch64
+            runs-on: macOS-latest
+            target: aarch64-apple-darwin
     steps:
     - uses: actions/checkout@v4
-
-    - name: Build
-      run: cargo build --release --verbose
-
-    - name: Archive Build Output
-      run: |
-        mkdir build-output
-        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          cp target/release/objmc.exe build-output/
-        else
-          cp target/release/objmc build-output/
-        fi
-      shell: bash
-
-    - name: Upload Build Artifact
-      uses: actions/upload-artifact@v3
+    - name: Cache cargo & target directories
+      uses: Swatinem/rust-cache@v2
       with:
-        name: ${{ matrix.os }}-build-output
-        path: build-output/
+        key: "v2"
+    - name: Build executable
+      uses: houseabsolute/actions-rust-cross@v0
+      with:
+        target: ${{ matrix.platform.target }}
+        args: "--locked --release"
+        strip: true
+    - name: Publish artifacts and release
+      uses: houseabsolute/actions-rust-release@v0
+      with:
+        executable-name: objmc
+        target: ${{ matrix.platform.target }}
