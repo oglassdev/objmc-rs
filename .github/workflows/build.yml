@@ -50,10 +50,8 @@ jobs:
         target: ${{ matrix.platform.target }}
         args: "--locked --release"
         strip: true
-    - name: Publish artifacts and release
-      uses: houseabsolute/actions-rust-release@v0
+    - name: "Upload artifacts"
+      uses: actions/upload-artifact@v4
       with:
-        executable-name: objmc
-        extra-files: null
-        changes-file: null
-        target: ${{ matrix.platform.target }}
+        name: objmc-${{ matrix.platform.os-name }}-${{ github.sha }}
+        path: 'target/**/release/objmc*'
