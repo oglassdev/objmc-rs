@@ -54,5 +54,6 @@ jobs:
       uses: houseabsolute/actions-rust-release@v0
       with:
         executable-name: objmc
-        extra-files: ""
+        extra-files: null
+        changes-file: null
         target: ${{ matrix.platform.target }}
