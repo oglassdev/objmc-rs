@@ -23,7 +23,7 @@ impl<T : Copy> Position<T> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Face {
     pub vertex_normals: Vec<(u32, u32)>,
 }

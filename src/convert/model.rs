@@ -1,22 +1,20 @@
 use serde_json::{json, Value};
-use tracing::info;
-use crate::convert::state::ConvertState;
+use crate::convert::config::ConvertConfig;
 
 pub fn create_model_output(
-    state: &ConvertState,
-    texture: &str,
+    config: &ConvertConfig,
     height: u32
 ) -> Value {
     let mut elements = Vec::new();
 
-    let (width, _) = state.texture_size;
+    let (width, _) = config.texture_size;
 
-    let height = if state.args.no_pow { height } else { height.next_power_of_two() } as f64;
+    let height = if config.no_pow { height } else { height.next_power_of_two() } as f64;
 
     // TODO: Use proper height
     let width_fp = width as f64;
 
-    for idx in 0..state.framed_obj.frames[0].faces.len() {
+    for idx in 0..config.input.obj.frames[0].faces.len() {
         let x = (idx as u32 % width) as f64;
 
         let y = (idx as u32 / width + 1) as f64;
@@ -34,7 +32,7 @@ pub fn create_model_output(
 
     json!({
         "textures": {
-            "0": texture
+            "0": config.texture_resource
         },
         "display":{
             "thirdperson_righthand": {

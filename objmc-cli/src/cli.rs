@@ -1,4 +1,6 @@
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::builder::PossibleValue;
+use objmc::convert::config::{ColorBehavior, ConvertConfig, Easing, Visibility};
 
 /// A tool to bypass Minecraft Java Edition model limits by baking vertex data into texture.
 #[derive(Parser, Debug, Clone)]
@@ -104,27 +106,8 @@ pub struct Convert {
     pub visibility: Vec<Visibility>,
 }
 
-#[derive(ValueEnum, Debug, Copy, Clone, PartialOrd, PartialEq, Ord, Eq)]
-pub enum Easing {
-    Linear,
-    InOutCubic,
-    Bezier
-}
-
-#[derive(ValueEnum, Debug, Copy, Clone, PartialOrd, PartialEq, Ord, Eq)]
-pub enum Visibility {
-    Gui,
-    FirstPerson,
-    World
-}
-
-#[derive(ValueEnum, Debug, Copy, Clone, PartialOrd, PartialEq, Ord, Eq)]
-pub enum ColorBehavior {
-    Pitch,
-    Yaw,
-    Roll,
-    Time,
-    Scale,
-    Overlay,
-    Hurt
+impl Into<ConvertConfig> for Convert {
+    fn into(self) -> ConvertConfig {
+        todo!()
+    }
 }
