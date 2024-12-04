@@ -1,15 +1,11 @@
 use std::error::Error;
 use clap::Parser;
 use tracing::{error, info};
-use crate::convert::convert;
-use crate::join::join_models;
 
 mod cli;
-mod convert;
-pub(crate) mod obj;
-mod join;
 
 fn main() {
+    objmc::convert::convert()
     tracing_subscriber::fmt::init();
 
     let args = cli::Cli::parse();
