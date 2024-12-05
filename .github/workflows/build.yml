@@ -48,10 +48,22 @@ jobs:
       uses: houseabsolute/actions-rust-cross@v0
       with:
         target: ${{ matrix.platform.target }}
-        args: "--locked --release"
+        args: "--locked --release --workspace"
         strip: true
+    - name: Prepare artifacts
+      run: |
+        mkdir -p artifacts
+        
+        artifacts=("objmc", "objmc.exe", "objmc-gui", "objmc-gui.exe")
+        for artifact in "${artifacts[@]}"; do
+          if [[ -f target/**/release/$artifact ]]; then
+            cp target/**/release/$artifact artifacts/
+          fi
+        done
     - name: "Upload artifacts"
       uses: actions/upload-artifact@v4
       with:
         name: objmc-${{ matrix.platform.os-name }}-${{ github.sha }}
-        path: 'target/**/release/objmc*'
+        path: |
+          artifacts/objmc
+          artifacts/objmc.exe
