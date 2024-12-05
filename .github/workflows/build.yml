@@ -1,9 +1,7 @@
-name: Build
+name: Build CLI
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
     branches: [ "main" ]
 
 env:
@@ -48,7 +46,7 @@ jobs:
       uses: houseabsolute/actions-rust-cross@v0
       with:
         target: ${{ matrix.platform.target }}
-        args: "--locked --release --workspace"
+        args: "--locked --release --package objmc-cli"
         strip: true
     - name: Install current Bash on macOS
       if: runner.os == 'macOS'
@@ -60,7 +58,7 @@ jobs:
         
         shopt -s globstar
         
-        artifacts=("objmc" "objmc.exe" "objmc-gui" "objmc-gui.exe")
+        artifacts=("objmc" "objmc.exe")
         for artifact in "${artifacts[@]}"; do
           cp target/**/release/$artifact artifacts/ 2>/dev/null || :
         done
