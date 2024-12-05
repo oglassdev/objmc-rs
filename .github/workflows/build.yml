@@ -55,7 +55,9 @@ jobs:
       run: |
         mkdir -p artifacts
         
-        artifacts=("objmc", "objmc.exe", "objmc-gui", "objmc-gui.exe")
+        shopt -s globstar
+        
+        artifacts=("objmc" "objmc.exe" "objmc-gui" "objmc-gui.exe")
         for artifact in "${artifacts[@]}"; do
           cp target/**/release/$artifact artifacts/ 2>/dev/null || :
         done
