@@ -50,6 +50,9 @@ jobs:
         target: ${{ matrix.platform.target }}
         args: "--locked --release --workspace"
         strip: true
+    - name: Install current Bash on macOS
+      if: runner.os == 'macOS'
+      run: brew install bash
     - name: Prepare artifacts
       shell: bash
       run: |
