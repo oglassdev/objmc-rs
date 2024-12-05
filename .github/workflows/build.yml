@@ -51,19 +51,16 @@ jobs:
         args: "--locked --release --workspace"
         strip: true
     - name: Prepare artifacts
+      shell: bash
       run: |
         mkdir -p artifacts
         
         artifacts=("objmc", "objmc.exe", "objmc-gui", "objmc-gui.exe")
         for artifact in "${artifacts[@]}"; do
-          if [[ -f target/**/release/$artifact ]]; then
-            cp target/**/release/$artifact artifacts/
-          fi
+          cp target/**/release/$artifact artifacts/ 2>/dev/null || :
         done
     - name: "Upload artifacts"
       uses: actions/upload-artifact@v4
       with:
         name: objmc-${{ matrix.platform.os-name }}-${{ github.sha }}
-        path: |
-          artifacts/objmc
-          artifacts/objmc.exe
+        path: artifacts/*
