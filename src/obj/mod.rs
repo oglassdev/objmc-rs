@@ -8,7 +8,7 @@ use tracing::{info, warn};
 use model::{Position, Vector, Face};
 use frame::Frame;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FramedObj {
     pub vertices: Vec<Position<f64>>,
     pub uvs: Vec<Vector<f32>>,

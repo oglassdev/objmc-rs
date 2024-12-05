@@ -1,8 +1,8 @@
-use serde_json::{Map, Value};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufReader, Write};
 
 pub fn join_models(models: Vec<String>, output: &str) -> Result<(), Box<dyn Error>> {
     let files = models

@@ -1,56 +1,44 @@
 use image::RgbaImage;
-use crate::cli::{Easing, Visibility};
-use crate::convert::state::ConvertState;
+use crate::convert::config::{ConvertConfig, Easing};
 use crate::convert::texture::property::{FaceIdProperty, PositionData, SettingsProperty, Texture, TextureProperty, UVData, VertexIndexes};
-use crate::obj::model::Position;
 
 mod property;
 
-pub fn create_texture(state: &ConvertState) -> RgbaImage {
-    let (width, height) = state.texture_size;
+pub fn create_texture(config: &ConvertConfig) -> RgbaImage {
+    let (width, height) = config.texture_size;
 
-    let face_count = state.framed_obj.frames[0].faces.len() as u32;
+    let face_count = config.input.obj.frames[0].faces.len() as u32;
 
     let settings_property = SettingsProperty {
-        compress: state.compress,
+        compress: config.compress,
 
         texture_size: [width as u16, height as u16],
 
         vert_count: face_count * 4,
 
-        duration: state.args.duration.clamp(1, 65_536),
-        easing: match &state.args.easing {
+        duration: config.animation_config.duration.clamp(1, 65_536),
+        easing: match &config.animation_config.easing {
             Some(Easing::Linear) => 1,
             Some(Easing::InOutCubic) => 2,
             Some(Easing::Bezier) => 3,
             None => 0,
         },
-        autoplay: state.args.autoplay,
-        fade_texture: state.args.fade_textures,
+        autoplay: config.animation_config.autoplay,
+        fade_texture: config.animation_config.fade_textures,
 
-        frame_count: state.framed_obj.frames.len() as u32,
-        texture_count: state.textures.len() as u8,
+        frame_count: config.input.obj.frames.len() as u32,
+        texture_count: config.input.textures.len() as u8,
 
-        vp_height: ((state.framed_obj.vertices.len() * 3) as f64 / width as f64).ceil() as u16,
-        vt_height: ((state.framed_obj.uvs.len() * 2) as f64 / width as f64).ceil() as u16,
+        vp_height: ((config.input.obj.vertices.len() * 3) as f64 / width as f64).ceil() as u16,
+        vt_height: ((config.input.obj.uvs.len() * 2) as f64 / width as f64).ceil() as u16,
 
-        no_shadow: state.args.no_shadow,
-        autorotate_pitch: state.args.autorotate_pitch,
-        autorotate_yaw: state.args.autorotate_yaw,
-        visibility: state.args
+        no_shadow: config.no_shadow,
+        autorotate_pitch: config.autorotate_pitch,
+        autorotate_yaw: config.autorotate_yaw,
+        visibility: config
             .visibility
-            .iter()
-            .map(|visibility| match visibility {
-                Visibility::Gui => 0b100,
-                Visibility::FirstPerson => 0b010,
-                Visibility::World => 0b001
-            } as u8)
-            .fold(0, |acc, x| acc | x),
-        color_behavior: if !state.args.colorbehavior.is_empty() {
-            (*state.args.colorbehavior.get(0).unwrap() as u8) << 6 |
-                (*state.args.colorbehavior.get(1).unwrap() as u8) << 3 |
-                *state.args.colorbehavior.get(2).unwrap() as u8
-        } else { 0 }
+            .to_u8(),
+        color_behavior: config.color_behavior.to_u8()
     };
 
     let face_id_property = FaceIdProperty {
@@ -58,27 +46,27 @@ pub fn create_texture(state: &ConvertState) -> RgbaImage {
         width,
     };
 
-    let texture_properties: Vec<Texture> = state.textures.iter().map(|image| {
+    let texture_properties: Vec<Texture> = config.input.textures.iter().map(|image| {
         Texture {
             image,
-            flip: state.args.flip_uv
+            flip: config.flip_uv
         }
     }).collect();
 
     let position_data_property = PositionData {
-        vertices: &state.framed_obj.vertices,
+        vertices: &config.input.obj.vertices,
         width,
-        scale: state.args.scale,
-        offset: Position::new(state.args.offset[0], state.args.offset[1], state.args.offset[2])
+        scale: config.scale,
+        offset: config.offset
     };
 
     let uv_data_property = UVData {
-        uvs: &state.framed_obj.uvs,
+        uvs: &config.input.obj.uvs,
         width
     };
 
     let vertex_indexes_property = VertexIndexes {
-        frames: &state.framed_obj.frames,
+        frames: &config.input.obj.frames,
         width
     };
 
@@ -91,7 +79,7 @@ pub fn create_texture(state: &ConvertState) -> RgbaImage {
 
     let mut buf = RgbaImage::new(
         width,
-        if state.args.no_pow { base_height } else { base_height.next_power_of_two() }
+        if config.no_pow { base_height } else { base_height.next_power_of_two() }
     );
 
     let mut offset: u32 = 0;
