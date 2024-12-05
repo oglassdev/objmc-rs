@@ -1,6 +1,11 @@
+use std::error::Error;
+use std::fs::File;
+use std::io::BufReader;
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use clap::builder::PossibleValue;
-use objmc::convert::config::{ColorBehavior, ConvertConfig, Easing, Visibility};
+use image::ImageReader;
+use objmc::convert::config::{AnimationConfig, ColorBehavior, ColorBehaviorConfig, ConvertConfig, Easing, Input, Visibility};
+use objmc::obj::FramedObj;
+use objmc::obj::model::Position;
 
 /// A tool to bypass Minecraft Java Edition model limits by baking vertex data into texture.
 #[derive(Parser, Debug, Clone)]
@@ -64,11 +69,11 @@ pub struct Convert {
     pub fade_textures: bool,
 
     #[arg(long)]
-    pub easing: Option<Easing>,
+    pub easing: Option<EasingArg>,
 
     /// Item color overlay behavior
     #[arg(long, num_args = 3, default_values = ["pitch", "yaw", "roll"])]
-    pub colorbehavior: Vec<ColorBehavior>,
+    pub colorbehavior: Vec<ColorBehaviorArg>,
 
     // yaw -> 001
     // pitch -> 010
@@ -103,11 +108,108 @@ pub struct Convert {
 
     /// Determines where model is visible
     #[arg(long, default_values = ["gui", "first-person", "world"])]
-    pub visibility: Vec<Visibility>,
+    pub visibility: Vec<VisibilityArg>,
 }
 
-impl Into<ConvertConfig> for Convert {
-    fn into(self) -> ConvertConfig {
-        todo!()
+impl Convert {
+    pub fn to_config(self) -> Result<ConvertConfig, Box<dyn Error>> {
+        let mut objs = Vec::with_capacity(self.obj.len());
+
+        for path in self.obj {
+            let file = File::open(path)?;
+            objs.push(BufReader::new(file));
+        }
+
+        let obj = FramedObj::read(objs)?;
+
+        let mut textures = Vec::with_capacity(self.texture.len());
+
+        for path in self.texture {
+            let file = File::open(path)?;
+            
+            let image = ImageReader::new(BufReader::new(file)).decode()?;
+            textures.push(image.into_rgba8());
+        }
+
+        ConvertConfig::new(
+            Input {
+                obj,
+                textures
+            },
+            self.texture_resource.unwrap_or(self.output_texture),
+            Position::new(self.offset[0], self.offset[1], self.offset[2]),
+            0.0,
+            AnimationConfig {
+                autoplay: self.autoplay,
+                duration: self.duration,
+                fade_textures: self.fade_textures,
+                easing: self.easing.map(|easing| easing.to_easing()),
+            },
+            ColorBehaviorConfig(
+                self.colorbehavior[0].to_color_behavior(),
+                self.colorbehavior[1].to_color_behavior(),
+                self.colorbehavior[2].to_color_behavior()
+            ),
+            self.autorotate_yaw,
+            self.autorotate_pitch,
+            self.compress,
+            self.no_shadow,
+            self.no_pow,
+            self.flip_uv,
+            Visibility {
+                gui: self.visibility.iter().any(|arg| *arg == VisibilityArg::Gui),
+                first_person: self.visibility.iter().any(|arg| *arg == VisibilityArg::FirstPerson),
+                world: self.visibility.iter().any(|arg| *arg == VisibilityArg::World),
+            }
+        )
+    }
+}
+
+#[derive(ValueEnum, Debug, Copy, Clone, PartialOrd, PartialEq, Ord, Eq)]
+pub enum EasingArg {
+    Linear,
+    InOutCubic,
+    Bezier
+}
+
+impl EasingArg {
+    fn to_easing(&self) -> Easing {
+        match self {
+            EasingArg::Linear => Easing::Linear,
+            EasingArg::InOutCubic => Easing::InOutCubic,
+            EasingArg::Bezier => Easing::Bezier
+        }
+    }
+}
+
+#[derive(ValueEnum, Debug, Copy, Clone, PartialOrd, PartialEq, Ord, Eq)]
+pub enum VisibilityArg {
+    Gui,
+    FirstPerson,
+    World
+}
+
+#[derive(ValueEnum, Debug, Copy, Clone, PartialOrd, PartialEq, Ord, Eq)]
+pub enum ColorBehaviorArg {
+    Pitch,
+    Yaw,
+    Roll,
+    Time,
+    Scale,
+    Overlay,
+    Hurt
+}
+
+impl ColorBehaviorArg {
+    fn to_color_behavior(&self) -> ColorBehavior {
+        match self {
+            ColorBehaviorArg::Pitch => ColorBehavior::Pitch,
+            ColorBehaviorArg::Yaw => ColorBehavior::Yaw,
+            ColorBehaviorArg::Roll => ColorBehavior::Roll,
+            ColorBehaviorArg::Time => ColorBehavior::Time,
+            ColorBehaviorArg::Scale => ColorBehavior::Scale,
+            ColorBehaviorArg::Overlay => ColorBehavior::Overlay,
+            ColorBehaviorArg::Hurt => ColorBehavior::Hurt
+        }
     }
 }

@@ -1,5 +1,6 @@
 use std::error::Error;
 use image::RgbaImage;
+use tracing::warn;
 use crate::obj::FramedObj;
 use crate::obj::model::Position;
 
@@ -22,7 +23,7 @@ pub struct AnimationConfig {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct ColorBehaviorConfig(ColorBehavior, ColorBehavior, ColorBehavior);
+pub struct ColorBehaviorConfig(pub ColorBehavior, pub ColorBehavior, pub ColorBehavior);
 
 impl ColorBehaviorConfig {
     pub fn to_u8(&self) -> u8 {
@@ -73,11 +74,6 @@ impl ConvertConfig {
         scale: f64,
         animation_config: AnimationConfig,
         color_behavior: ColorBehaviorConfig,
-
-        // Autorotate Values:
-        //  Yaw -> 001
-        //  Pitch -> 010
-        //  Both -> 011
         autorotate_yaw: bool,
         autorotate_pitch: bool,
         compress: bool,
@@ -96,6 +92,11 @@ impl ConvertConfig {
         if input.textures.iter().any(|image| image.dimensions() != texture_size) {
             return Err("Texture dimensions do not match".into())
         }
+
+        let compress = if input.obj.uvs.len() > 256 && compress {
+            warn!("Model had more than 256 UV indexes, disabling compression");
+            false
+        } else { compress };
 
         Ok(
             Self {
@@ -127,9 +128,9 @@ pub enum Easing {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Visibility {
-    gui: bool,
-    first_person: bool,
-    world: bool
+    pub gui: bool,
+    pub first_person: bool,
+    pub world: bool
 }
 
 impl Visibility {

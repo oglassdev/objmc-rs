@@ -1,11 +1,18 @@
 use std::error::Error;
+use std::fs::File;
+use std::io::BufWriter;
 use clap::Parser;
+use image::{ImageFormat, RgbaImage};
+use serde_json::Value;
 use tracing::{error, info};
+use objmc::convert::config::ConvertConfig;
+use objmc::convert::convert;
+use objmc::join::join_models;
 
 mod cli;
 
 fn main() {
-    
+
     /*
     Use this for our CLI & GUI implementations
 
@@ -31,16 +38,33 @@ fn main() {
         return Err("Please provide a texture".into())
     }
      */
-    objmc::convert::convert()
     tracing_subscriber::fmt::init();
 
     let args = cli::Cli::parse();
 
     match args.command {
         cli::Command::Convert(conv) => {
-            match convert(&conv) {
-                Ok(()) => {
-                    info!("Converted successfully!");
+            let model_output = conv.output_model.clone();
+            let texture_output = conv.output_texture.clone();
+
+            let config: ConvertConfig = match conv.to_config() {
+                Ok(conf) => conf,
+                Err(err) => {
+                    error!("{}", err);
+                    return;
+                }
+            };
+
+            match convert(config) {
+                Ok((texture, model)) => {
+                    match write_output(texture, texture_output, model, model_output) {
+                        Ok(()) => {
+                            info!("Converted successfully!");
+                        }
+                        Err(err) => {
+                            error!("{}", err);
+                        }
+                    }
                 }
                 Err(err) => {
                     error!("{}", err);
@@ -60,4 +84,25 @@ fn main() {
             }
         },
     }
+}
+
+fn write_output(
+    texture: RgbaImage,
+    texture_output: String,
+    model: Value,
+    model_output: String
+) -> Result<(), Box<dyn Error>> {
+    let texture_file = File::create(texture_output)?;
+    
+    let mut texture_out = BufWriter::new(texture_file);
+    
+    texture.write_to(&mut texture_out, ImageFormat::Png)?;
+    
+    let model_file = File::create(model_output)?;
+    
+    let mut model_out = BufWriter::new(model_file);
+    
+    serde_json::to_writer(&mut model_out, &model)?;
+    
+    Ok(())
 }

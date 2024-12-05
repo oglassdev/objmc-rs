@@ -637,7 +637,6 @@ dependencies = [
  "image",
  "serde_json",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -645,7 +644,11 @@ name = "objmc-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "image",
  "objmc",
+ "serde_json",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
