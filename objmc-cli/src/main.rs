@@ -8,8 +8,10 @@ use tracing::{error, info};
 use objmc::convert::config::ConvertConfig;
 use objmc::convert::convert;
 use objmc::join::join_models;
+use crate::config::{Cli, Command};
+use crate::config::convert::ConvertResult;
 
-mod cli;
+mod config;
 
 fn main() {
 
@@ -40,14 +42,11 @@ fn main() {
      */
     tracing_subscriber::fmt::init();
 
-    let args = cli::Cli::parse();
+    let args = Cli::parse();
 
     match args.command {
-        cli::Command::Convert(conv) => {
-            let model_output = conv.output_model.clone();
-            let texture_output = conv.output_texture.clone();
-
-            let config: ConvertConfig = match conv.to_config() {
+        Command::Convert(conv) => {
+            let result: ConvertResult = match conv.to_config() {
                 Ok(conf) => conf,
                 Err(err) => {
                     error!("{}", err);
@@ -55,9 +54,9 @@ fn main() {
                 }
             };
 
-            match convert(config) {
+            match convert(result.config) {
                 Ok((texture, model)) => {
-                    match write_output(texture, texture_output, model, model_output) {
+                    match write_output(texture, result.output_texture, model, result.output_model) {
                         Ok(()) => {
                             info!("Converted successfully!");
                         }
@@ -71,8 +70,8 @@ fn main() {
                 }
             };
         },
-        cli::Command::Head {  } => todo!(),
-        cli::Command::Join { output, models } => {
+        Command::Head {  } => todo!(),
+        Command::Join { output, models } => {
             let model_count = models.len();
             match join_models(models, &output) {
                 Ok(()) => {
@@ -82,27 +81,19 @@ fn main() {
                     error!("{}", err);
                 }
             }
-        },
+        }
     }
 }
 
 fn write_output(
     texture: RgbaImage,
-    texture_output: String,
+    texture_output: File,
     model: Value,
-    model_output: String
+    model_output: File
 ) -> Result<(), Box<dyn Error>> {
-    let texture_file = File::create(texture_output)?;
+    texture.write_to(&mut BufWriter::new(texture_output), ImageFormat::Png)?;
     
-    let mut texture_out = BufWriter::new(texture_file);
-    
-    texture.write_to(&mut texture_out, ImageFormat::Png)?;
-    
-    let model_file = File::create(model_output)?;
-    
-    let mut model_out = BufWriter::new(model_file);
-    
-    serde_json::to_writer(&mut model_out, &model)?;
+    serde_json::to_writer(&mut BufWriter::new(model_output), &model)?;
     
     Ok(())
 }

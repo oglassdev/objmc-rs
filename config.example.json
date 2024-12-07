@@ -1,0 +1,32 @@
+{
+  "input": {
+    "objs": [
+      "test/model0000.obj",
+      "test/model0001.obj",
+      "test/model0002.obj",
+      "test/model0003.obj"
+    ],
+    "textures": ["test/texture.png"]
+  },
+  "output": {
+    "model": "test/output_model.json",
+    "texture": "test/output_texture.png",
+    "texture_resource": "custom_resource"
+  },
+  "transform": {
+    "offset": [1.0, 2.0, 3.0],
+    "scale": 2.5
+  },
+  "animation": {
+    "autoplay": true,
+    "duration": 30,
+    "fade_textures": false,
+    "easing": "linear"
+  },
+  "settings": {
+    "compress": true,
+    "flip_uv": true,
+    "colorbehavior": ["time", "scale", "overlay"],
+    "visibility": ["gui", "firstperson"]
+  }
+}

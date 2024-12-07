@@ -646,6 +646,7 @@ dependencies = [
  "clap",
  "image",
  "objmc",
+ "serde",
  "serde_json",
  "tracing",
  "tracing-subscriber",
