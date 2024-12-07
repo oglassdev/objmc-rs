@@ -12,7 +12,7 @@ pub struct Input {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AnimationConfig {
+pub struct Animation {
     pub autoplay: bool,
 
     pub duration: u32,
@@ -23,9 +23,9 @@ pub struct AnimationConfig {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct ColorBehaviorConfig(pub ColorBehavior, pub ColorBehavior, pub ColorBehavior);
+pub struct ColorBehavior(pub SingleColorBehavior, pub SingleColorBehavior, pub SingleColorBehavior);
 
-impl ColorBehaviorConfig {
+impl ColorBehavior {
     pub fn to_u8(&self) -> u8 {
         (self.0 as u8) << 6 | (self.1 as u8) << 3 | self.2 as u8
     }
@@ -43,9 +43,9 @@ pub struct ConvertConfig {
 
     pub(crate) scale: f64,
 
-    pub(crate) animation_config: AnimationConfig,
+    pub(crate) animation: Animation,
 
-    pub(crate) color_behavior: ColorBehaviorConfig,
+    pub(crate) color_behavior: ColorBehavior,
 
     // Autorotate Values:
     //  Yaw -> 001
@@ -72,8 +72,8 @@ impl ConvertConfig {
         texture_resource: String,
         offset: Position<f64>,
         scale: f64,
-        animation_config: AnimationConfig,
-        color_behavior: ColorBehaviorConfig,
+        animation: Animation,
+        color_behavior: ColorBehavior,
         autorotate_yaw: bool,
         autorotate_pitch: bool,
         compress: bool,
@@ -105,7 +105,7 @@ impl ConvertConfig {
                 texture_resource,
                 offset,
                 scale,
-                animation_config,
+                animation,
                 color_behavior,
                 autorotate_yaw,
                 autorotate_pitch,
@@ -142,7 +142,7 @@ impl Visibility {
 }
 
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq, Ord, Eq)]
-pub enum ColorBehavior {
+pub enum SingleColorBehavior {
     Pitch,
     Yaw,
     Roll,

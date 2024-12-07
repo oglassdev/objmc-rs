@@ -16,15 +16,15 @@ pub fn create_texture(config: &ConvertConfig) -> RgbaImage {
 
         vert_count: face_count * 4,
 
-        duration: config.animation_config.duration.clamp(1, 65_536),
-        easing: match &config.animation_config.easing {
+        duration: config.animation.duration.clamp(1, 65_536),
+        easing: match &config.animation.easing {
             Some(Easing::Linear) => 1,
             Some(Easing::InOutCubic) => 2,
             Some(Easing::Bezier) => 3,
             None => 0,
         },
-        autoplay: config.animation_config.autoplay,
-        fade_texture: config.animation_config.fade_textures,
+        autoplay: config.animation.autoplay,
+        fade_texture: config.animation.fade_textures,
 
         frame_count: config.input.obj.frames.len() as u32,
         texture_count: config.input.textures.len() as u8,
