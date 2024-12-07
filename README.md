@@ -25,9 +25,17 @@ objmc-rs is relatively new and isn't as fully featured as the original Python ve
 
 ## Usage
 
-Currently, no builds are provided, as it is in early development. As a temporary alternative, install Cargo and Rust, then build it yourself using `cargo build --release`
+The CLI is built with GitHub Actions, which can be found [here](https://github.com/oglassdev/objmc-rs/actions/workflows/build.yml?query=is%3Acompleted).
 
-The final binary will end up in `./target/release`
+Download the appropriate version for your OS and architecture, unarchive it, and use it. This must be used as a CLI application and will appear to not do anything if run by double clicking it.
+
+> [!WARNING]
+> As reported by Godlander, the executable may be falsely detected as a trojan by Microsoft Defender if run on Windows.
+> 
+> ![image](https://github.com/user-attachments/assets/117d1405-0d99-44d1-83d6-611239cf4e28)
+> ![image](https://github.com/user-attachments/assets/26ac24f2-6eee-4fc8-a894-e01979cadfe0)
+>
+> This is a common false positive with Rust programs on Windows, and can be safely ignored. I personally have been unable to reproduce it, so it may vary depending on what Defender version you may be on. If you have security concerns and would still like to verify that it is safe, you are welcome to upload it to VirusTotal.
 
 ---
 
@@ -65,6 +73,14 @@ objmc convert [OPTIONS] --obj <OBJ> --texture <TEXTURE> <OUTPUT_MODEL> <OUTPUT_T
 ```bash
  objmc convert -h
 ```
+
+Alternatively, a config file can be used with the `--config` option.
+
+```
+objmc convert --config config.json
+```
+
+[Configuration Example](./config.example.json)
 
 #### Examples
 
